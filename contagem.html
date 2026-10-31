@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contagem para o ENEM</title>
+<meta name="theme-color" content="#3730a3">
+<link rel="icon" href="icone-192.png">
+<style>
+:root{--bg:#f4f6fc;--card:#fff;--ink:#1b2140;--mut:#5b6486;--pri:#4f46e5;--dk:#3730a3;--soft:#eef0ff;--line:#e2e6f3;--ok:#15803d;--okb:#dcfce7;--pk:#db2777}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1124;--card:#171b35;--ink:#eef0ff;--mut:#a4abcb;--line:#2a3058;--soft:#222850;--okb:#0f3a22;--ok:#4ade80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+header{background:var(--dk);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header b{font-size:1.05rem}header a{color:#fff;margin-left:auto;text-decoration:none;background:rgba(255,255,255,.16);padding:7px 12px;border-radius:10px;font-size:.92rem}
+main{max-width:980px;margin:0 auto;padding:18px 16px 40px}
+.hoje{color:var(--mut);margin:4px 0 16px;font-size:1rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.box{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;text-align:center}
+.box.main{background:var(--pri);color:#fff;border:0}
+.num{font-size:clamp(4rem,16vw,8.5rem);font-weight:800;line-height:1;letter-spacing:-.03em}
+.lbl{font-size:1.15rem;font-weight:600;margin-top:6px}
+.dt{margin-top:8px;font-size:.98rem;opacity:.9}
+.box:not(.main) .num{color:var(--pri)}
+.msg{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-top:16px}
+.msg h2{margin:0 0 8px;font-size:1.25rem;color:var(--pri)}
+.msg p{margin:6px 0}
+.plano{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.plano span{background:var(--soft);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.fonte{color:var(--mut);font-size:.85rem;margin-top:16px}
+.aviso{background:#fef3c7;color:#78350f;border-radius:14px;padding:14px 16px;margin-top:16px}
+</style>
+</head>
+<body>
+<header><b>⏳ Contagem para o ENEM</b><a href="./">← Voltar ao painel</a></header>
+<main>
+  <p class="hoje" id="hoje"></p>
+  <div id="out"></div>
+  <p class="fonte">Datas oficiais: Edital Inep nº 64, de 21 de maio de 2026 (DOU de 22/05/2026). 1º dia: 8/11 (Linguagens, Ciências Humanas e Redação). 2º dia: 15/11 (Ciências da Natureza e Matemática). Portões abrem às 12h e fecham às 13h; provas começam às 13h30 (horário de Brasília). A contagem usa a data de hoje deste aparelho e se atualiza sozinha.</p>
+</main>
+<script>
+// Datas oficiais do Inep (Edital nº 64/2026). Para uma nova edição, troque aqui só depois que o Inep publicar as datas.
+const ENEM={ano:2026,d1:'2026-11-08',d2:'2026-11-15'};
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const SEM=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+function hojeBR(){ // data civil de hoje no horário de Brasília
+  try{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());return p}
+  catch(e){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+}
+function utc(s){const[a,m,d]=s.split('-').map(Number);return Date.UTC(a,m-1,d)}
+function dias(de,ate){return Math.round((utc(ate)-utc(de))/864e5)}
+function extenso(s){const[a,m,d]=s.split('-').map(Number);const w=new Date(Date.UTC(a,m-1,d)).getUTCDay();return SEM[w]+', '+d+' de '+MESES[m-1]+' de '+a}
+function q(n,um,v){return n===1?um:v.replace('#',n)}
+function render(){
+  const h=hojeBR(),a=dias(h,ENEM.d1),b=dias(h,ENEM.d2);
+  document.getElementById('hoje').textContent='Hoje é '+extenso(h)+'.';
+  const out=document.getElementById('out');let html='';
+  const box=(cls,num,lbl,dt)=>`<div class="box ${cls}"><div class="num">${num}</div><div class="lbl">${lbl}</div><div class="dt">${dt}</div></div>`;
+  if(b<0){
+    html=`<div class="aviso"><b>O ENEM ${ENEM.ano} já foi aplicado.</b> As datas da próxima edição ainda não foram confirmadas oficialmente pelo Inep. Assim que o edital for publicado, esta contagem pode ser atualizada.</div>`;
+  }else{
+    html='<div class="grid">';
+    if(a>0)html+=box('main',a,q(a,'dia para o 1º dia do ENEM','dias para o 1º dia do ENEM'),'Domingo, 8 de novembro');
+    else if(a===0)html+=box('main','Hoje!','É o 1º dia do ENEM','Linguagens, Ciências Humanas e Redação');
+    else html+=box('main','✓','1º dia concluído','Domingo, 8 de novembro');
+    if(b>0)html+=box('',b,q(b,'dia para a prova de Matemática','dias para a prova de Matemática'),'Domingo, 15 de novembro (2º dia)');
+    else html+=box('main','Hoje!','É a prova de Matemática','2º dia: Ciências da Natureza e Matemática');
+    html+='</div>';
+    const ref=b; // dias até a prova de Matemática
+    let txt;
+    if(ref===0)txt='Respire fundo, confie no que você estudou e leia cada enunciado com calma. Boa prova!';
+    else if(ref<=3)txt='Agora é hora de revisar com leveza: mapas mentais, flashcards e as fórmulas principais. Durma bem e cuide da alimentação.';
+    else txt='Ainda dá tempo de organizar a revisão com calma. Um pouco por dia vale mais do que muito de uma vez só.';
+    const porDia=Math.ceil(25/Math.max(1,ref));
+    const tit=ref===0?'Boa prova! 💜':ref<=3?'Reta final 💜':'Você ainda tem tempo 💜';
+    html+=`<div class="msg"><h2>${tit}</h2><p>${txt}</p>`+
+      (ref>3?`<div class="plano"><span>📚 25 conteúdos no painel</span><span>🗓️ ${ref} dias até a Matemática</span><span>🎯 Cerca de ${porDia} ${porDia===1?'conteúdo':'conteúdos'} por dia já cobrem tudo</span><span>🔁 Comece pelo que aparece em “O que preciso revisar?”</span></div>`:'')+`</div>`;
+  }
+  out.innerHTML=html;
+}
+render();setInterval(render,60000);
+</script>
+</body>
+</html>
